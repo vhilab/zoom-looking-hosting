@@ -1,0 +1,50 @@
+---
+title: "Untitled"
+author: "Mark Roman Miller"
+date: "11/13/2020"
+output: html_document
+---
+
+```{R}
+library(tidyverse)
+```
+
+```{R}
+files <- tibble(filename = list.files(".", recursive = T)) %>%
+  filter(filename != "validation.Rmd") %>%
+  filter(!(filename %>% startsWith("misplaced"))) %>%
+  extract(filename, 
+          c("tilt", "target", "dist", "sex", "race", "id", "tilt2", "target2", "dist2"), 
+          "^([-0\\+])_(CAM|SCREEN|OUT)_(CLOSE|FAR)/([MF])([ABLW])([12])_([-0\\+])_(CAM|SCREEN|OUT)_(CLOSE|FAR).png$",
+          remove = F
+          )
+
+files
+```
+
+First, check for parsing failures:
+
+```{R}
+files %>%
+  filter(is.na(tilt) | is.na(target) | is.na(dist) | is.na(sex) | is.na(race) | is.na(id))
+```
+
+Now check for any folder / location inconsistencies
+
+```{R}
+files %>%
+  filter(tilt != tilt2 | target != target2 | dist != dist2)
+
+
+```
+
+Finally, make sure all images are present.
+
+```{R}
+valid_files <- files %>%
+  select(-tilt2, -target2, -dist2)
+
+valid_files %>%
+  expand(tilt, target, dist, sex, race, id) %>%
+  anti_join(valid_files)
+```
